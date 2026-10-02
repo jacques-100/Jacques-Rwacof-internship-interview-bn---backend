@@ -116,6 +116,19 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void theWebAppOnAnotherSubdomainMayCallWithItsCookieButAStrangerSiteMayNot() throws Exception {
+        // the test configuration allows the dev web app and the Android app origins
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options("/api/v1/auth/refresh")
+                        .header("Origin", "http://localhost:5173").header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Credentials", "true"));
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options("/api/v1/auth/refresh")
+                        .header("Origin", "https://evil.example").header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void refreshWithoutCookieIsUnauthorized() throws Exception {
         mvc.perform(post("/api/v1/auth/refresh")).andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));

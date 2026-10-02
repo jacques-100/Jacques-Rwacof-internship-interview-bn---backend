@@ -1,0 +1,18 @@
+# Caddy obtains and renews the HTTPS certificate for the API's domain by itself (Let's Encrypt).
+{$API_DOMAIN} {
+	encode gzip
+
+	# Logo and photo uploads are small; refuse anything bigger before it reaches the API.
+	request_body {
+		max_size 4MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	# Caddy adds X-Forwarded-For, which the API uses to rate-limit sign-in attempts per client.
+	reverse_proxy backend:8080
+}
